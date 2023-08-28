@@ -132,6 +132,32 @@ spring framework
 
    가.  비 스프링 개발
 
-        UserMain.java -나 위 순서로 개발하게 된다. ( 정형화 된 방법: 틀 )
+        UserMain.java -------> UserService.java
+        (main)                    mesg(){} 
+
+	UserService s = new UserService();
+	s.mesg();
+
+   나. 스프링 개발
+
+        UserMain.java -------> UserService.java
+        (main)                    mesg(){} 
+
+      - 스프링에서는 클래스를 빈(bean)이라고 부른다. 
+      - 직접 빈을 new 하지 않음. 외부(*)에서 위임해서 관리 ( 빈 생성 ~ 빈 소멸, 빈의 lifecycle )
+        tomcat 컨테이너가 서블릿을 관리하는 방식과 비슷하다.
+	차이점은 tomcat은 서버(프로그램)이고 빈을 관리하는 외부(*)는 프로그램이 아니고 또 다른 빈이다.
+        외부(*)의 실체 클래스(빈)는 ApplicatonContext 이다.
+      - 작업 순서
+        1) 빈을 생성( *.java)
+	2) 빈을 xml에 등록 ( src/main/resource 에  user.xml 생성 )
+	  ==> 빈 등록등 다양한 설정 정보를 저장할 수 있다.
+	     예> mybatis의 Configuration.xml 역할이고
+	        tomcat의 web.xml 역할이다.
+	3) ApplicatonContext 에 xml을 알려준다.
+	4) ApplicatonContext 가 xml에 등록된 빈 정보를 보고 자동생성 ~ 소멸 처리함.
+
+      ==> 누구나 개발에도 위 순서로 개발하게 된다. ( 정형화 된 방법: 틀 )
           틀의 역할이 프레임워크(framework)이다. 유지보수 장점이 매우 크다.
 	  매우 가벼운 경량의 프레임워크 이다.
+
