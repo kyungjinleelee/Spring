@@ -1,0 +1,95 @@
+8/29 복습
+1. 의존성 주입 ( dependency injection : DI ) ==> 1:1
+
+    A빈 -----------> B빈  ( A has a B )
+
+   이전: A빈에서 직접 B빈을 생성
+       
+        B b = new B();
+
+        A a  = new A(b); // 생성자 이용
+        A a  = new A();
+	a.setB(b);       // set메서드 이용
+	a.b=b;           // 직접 변수 접근
+
+   스프링: 외부에서 생성된 B빈을 A빈에 주입
+
+      가. 생성자 이용
+         <constructor-arg name="생성자의 파라미터변수명" value="값" />
+	 <constructor-arg name="생성자의 파라미터변수명" ref="값" />
+	  또는
+	 <bean  id="" class=""   c:생성자의파라미터변수명="값" />
+	 <bean  id="" class=""   c:생성자의파라미터변수명-ref="값" />
+
+      나. set메서드 이용
+         <property name="set메서드명"  value="값" />
+	 <property name="set메서드명"  ref="값" />
+	 또는
+	 <bean  id="" class=""   p:set메서드명="값" />
+	 <bean  id="" class=""   p:set메서드명-ref="값" />
+
+2. 의존성 주입 ( dependency injection : DI ) ==> 1: n
+
+   가. List
+           <property ~ >
+               <list>
+                  <value>문자열값|기본형</value>
+		  <ref bean="참조형"/>
+	       </list>
+	   </property>
+       * util namespace 이용   
+        <!--  util namespace -->
+	<util:list id="xxx">
+	  <ref bean="c1"/>
+	  <ref bean="c2"/>
+	  <ref bean="c1"/>
+	</util:list>
+
+
+   나. Set
+          <property ~ >
+               <set>
+                  <value>문자열값|기본형</value>
+		  <ref bean="참조형"/>
+	       </set>
+	   </property>
+
+	   <!--  util namespace -->
+	<util:set id="xxx">
+	  <ref bean="c1"/>
+          <ref bean="c2"/>
+          <ref bean="c1"/>
+	</util:set>
+   다. Map
+         <property ~ >
+               <map>
+                  <entry key=""  value="문자열값|기본형" />
+		  <entry key=""  ref="참조형" />
+	       </map>
+	   </property>
+
+          <!-- util namespace -->
+	<util:map id="xxx">
+	   <entry key="pet01" value-ref="c1" />
+           <entry key="pet02">
+             <ref bean="c2"/>
+           </entry>
+	</util:map>
+
+   라. Properties
+         <property ~ >
+               <props>
+                  <prop key="">문자열값|기본형</prop>
+		  <prop key="">문자열값|기본형</prop>
+	       </props>
+	 </property>
+
+	 또는
+	 <!-- util namespace -->
+	<util:properties id="xxx">
+	  <prop key="phone1">01032145698</prop>
+          <prop key="phone2">01098765432</prop>
+	</util:properties>
+
+ 여기까지 명시적인 의존성 주입 방법이다. (1:1, 1:n)
+######################################################################
