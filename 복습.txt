@@ -93,3 +93,73 @@
 
  여기까지 명시적인 의존성 주입 방법이다. (1:1, 1:n)
 ######################################################################
+8/30 
+리뷰
+1. 빈의 life cycle관련된 콜백 메서드
+  
+  가. <bean init-method="메서드명(aaa)"  destroy-method="메서드명(bbb)" >
+     ==> 빈이 생성된후(생성자 호출후) aaa() 호출된다.
+         빈이 삭제될 때 bbb() 호출된다.
+     ==> aaa()메서드에서는 초기화 작업이 가능하고 
+         bbb()메서드에서는 자원 반납같은 close 작업이 가능하다.
+
+  나. InitialzingBean, DisposableBean 인터페이스 이용
+     ==> 빈 implements InitialzingBean, DisposableBean
+     ==> afterPropertiesSet() 초기화 작업이 가능하고 
+         destroy() 자원 반납같은 close 작업이 가능하다.
+
+  다. @PostConstruct, @PreDestroy 어노테이션 이용
+     ==>  @PostConstruct
+          public void aaa(){
+	    //초기화 작업
+	  }
+	  @PreDestroy
+	  public void bbb(){
+	    //자원 반납같은 close 작업
+	  }
+    반드시 어노테이션 활성화를 위한 <context:annotation-config /> 필요하다.
+
+2. profile
+
+ 개념:  개발용따로
+       제품용따로
+
+3. DB 연동시 4가지 필요했는데.. jdbc.properties 사용했음.
+   <context:property-placeholder location="classpath:com/config/jdbc.properties" >
+
+4. I18N (국제화) : InternationalizatioN
+  개념: 다국어
+  개별언어: 파일명_국가별언어코드.properties ==> 리소스번들(resource bundle) 파일이라고 부른다.
+
+  <bean id="messageSource"  class="ReloadableResourceBundleMessageSource">
+     <property name="basename" value="classpath:com/config/파일명" />
+  </bean>
+
+  주의할 점 2가지
+   가. 반드시 id="messageSource" 지정.
+   나. 경로지정시 '파일명' 만 지정.
+
+  *번들 파일 사용하는 대표적인 3가지 ==> 반드시 ApplicationContext 이용
+  가. TestMain
+  나. 임의의 빈에서는 implments MessageSourceAware  하고
+      setMessageSource(MessageSource xxx){} 재정의하면 자동으로 MessageSource가 주입된다.
+          
+	  MessageSource
+	       |
+	  ApplicationContext   
+  다. jsp
+
+5. scope
+  
+  가. scope='singleton'
+     - 기본
+     - 빈을 한번만 생성한다.
+     - 필요시 getBean()할 때 이전에 생성된 빈을 반환. ==> 따라서 하나의 빈으로 재사용한다.
+     - 여러 사용자가 하나의 빈을 공유해서 사용하게 된다.
+
+  나. scope='prototype'
+     - 빈을 매번 생성한다.
+     - 필요시 getBean()할 때 새롭게 객체생성해서 빈을 반환.
+     - 여러 사용자가 빈을 공유 불가 ==> 자신만의 특정 데이터를 관리할 수 있다.
+
+ 100% XML 기반의 Configuration Metadata 설정방법이었다.
