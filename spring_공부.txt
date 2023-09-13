@@ -600,3 +600,144 @@ https://docs.spring.io/spring-framework/docs/5.2.25.RELEASE/spring-framework-ref
    var x = "id";
    console.log( m[x],  m["pw"] );
  #################################### 
+
+6. SpEL ( Spring Framework Expression Language )
+ 
+  - xml Configuration Metadata 파일에서 사용
+  - value="#{표현식}"
+  - 기능
+    가. 리터럴 값 지정
+       value="#{'홍길동'}"
+       value="#{10}"
+    나. 연산
+       value="#{1+2}"
+       value="#{1>2}"
+       value="#{1>2?100:200}"
+    다. 다른 빈의 변수 참조
+       value="#{임의의빈id값.변수}"
+
+    라. 다른 빈의 인스턴스 메서드 참조
+       value="#{임의의빈id값.메서드()}"
+
+    마. 다른 빈의 static 메서드 참조
+       value="#{T(패키지명포함한클래스명).메서드()}"
+
+    바. 리소스번들(properties) 파일 접근
+       value="#{번들의id값['key']}"
+    
+    사. 컬렉션의 selection ( 행 선택 )
+    value="#{컬렉션id값.?[조건식]}"
+   
+    아. 컬렉션의 projection ( 열 선택 )
+    value="#{컬렉션id값.![열]}"
+
+    자. 컬렉션의 selection + projection
+    value="#{컬렉션id값.?[조건식].![열]}"
+
+ ##############################################################
+ AOP ( Aspect Oriented Programming : 관점 지향 프로그래밍)
+
+ 개념:  어플리케이션의 기능중에서 핵심기능(로그인,회원가입,계좌이체등)과
+                       부가기능(보안,트랜잭션,로깅처리,예외처리등)를 분리해서 개발하고자 하는 개발 방법론.
+       핵심기능에서 부가기능이 필요하면 주입받아서 사용한다.
+
+
+ 기술: AspectJ 이름의 AOP 원천 기술이 존재 ( 1995 년 )
+     Spring에서 AspectJ원천 기술에서 일부분의 스킬을 채택하고 Spring AOP라고 부름.
+     외부 라이브러리가 필요하다.
+
+ 주입시점?:  부가기능이 핵심기능에 주입되는 시점은
+         핵심기능의 메서드를 호출할 때 이다.
+	 (원천 기술인 AspectJ는 메서드 호출 및 다양한 상황에서도 주입받을 수 있다. )
+	 ==> AOP의 용어가 Join Point이다. )
+
+ 어떤 메서드 호출시 주입? :  login 메서드가 호출될 때 주입하도록 
+                     login 메서드가 선택될 수 있게 표현식을 사용해서 알려준다.
+
+          => AOP의 용어가 pointcut 이다.
+	  예> @Pointcut("execution( * login(..))")
+  
+ 타겟(target)? 부가기능이 주입되는 대상.
+ aspect ?   부가기능이 구현된 빈. 반드시 @Aspect 어노테이션 지정한다.
+            @Aspect 어노테이션 활성화하기 위해서 <aop:aspectj-autoproxy/> 지정한다.
+
+ 위빙(weaving)?  주입(조인) 의미
+
+ 부가기능의 실행시점? - 핵심기능의 메서드호출전 : Before advice, @Before 어노테이션
+               - 핵심기능의 메서드호출후 : after advice , @After 어노테이션
+	       - 핵심기능의 메서드 정상처리시 : afterReturning advice,  @AfterReturning 어노테이션
+	       - 핵심기능의 메서드 예외발생시 : afterThrowing advice, @AfterThrowing 어노테이션
+	       - 핵심기능의 메서드 호출전,호출후,정상처리, 예외발생시 모두 포함한 경우 : around advice
+	                                                , @Around 어노테이션
+          => AOP의 용어가 advice 이다.
+
+실습순서
+1. AOP 의존성 등록
+   <dependency>
+    <groupId>org.aspectj</groupId>
+    <artifactId>aspectjweaver</artifactId>
+    <version>1.9.4</version>
+</dependency>
+
+2. 타겟 객체 생성 ( 핵심 기능 구현한 빈 )
+
+3. aspect 객체 생성 ( 부가 기능 구현한 빈 )
+ 
+   가. @Aspect 어노테이션 지정
+   나. pointcut 지정: 어떤 핵심기능의 메서드인지 알려주는 기능
+    https://docs.spring.io/spring-framework/docs/5.2.25.RELEASE/spring-framework-reference/core.html#aop-pointcuts-examples
+     @Pointcut("execution( public String sayEcho() )")
+     pubilc void xxx(){
+        // 아무 구현 안함
+     }
+
+   다. advice 지정된 메서드
+     @Before("xxx()")
+     public void method2(JoinPoint point){
+       // 부가기능 구현
+     }
+   ==> 핵심기능의 어떤 메서드를 호출했는지 정보를 얻을 수 있다.
+       point에서 메서드명을 얻을 수 있다.
+
+
+   라. target과 aspect 빈 모두 xml에 등록
+
+   마. @Aspect 어노테이션 활성화
+      <aop:aspectj-autoproxy/>
+
+   바. TestMain 작성
+     - target의 sayEcho() 메서드 호출
+
+////////////////////////////////////////////////
+ (사용자가 만든)빈들을 xml에 등록없이 객체 생성 하는 방법 ( 매우 중요 )
+ ==> Component scan 한다고 말한다.
+
+  가. 빈을 등록
+
+  DeptMain --------> DeptService    ------------> DeptDAO --------> DB
+                     DeptServiceImpl
+
+      다음과 같이 xml에 명시적으로 등록함.
+      <bean id="dao" class="com.dao.DeptDAO" />
+      <bean id="service" class="com.service.DeptServiceImpl" />
+
+
+  나. 빈을 등록하지 않는 방법
+
+    - ApplicationContext에 생성할 빈들을 정보를 지정해야 된다. (패키지 단위로 생성할 빈 정보를 제공)
+      <context:component-scan base-package="com.*" />
+       ==> 내부적으로 <context:annotation-config /> 기능을 포함한다.
+
+    - base-package 에 있는 모든 빈들이 등록되지 않고 명시적으로 마킹해야 된다.
+      
+      마킹하는 방법은 다음과 같다.
+       @Component : 포괄적인 마킹 방법
+       @Repository : DAO에 사용하는 마킹
+       @Service    : Service에 사용하는 마킹
+
+       @Controller
+       @RestController 
+       @ControllerAdvice
+       @Configuration 
+      
+################################################
