@@ -741,3 +741,72 @@ https://docs.spring.io/spring-framework/docs/5.2.25.RELEASE/spring-framework-ref
        @Configuration 
       
 ################################################
+################################################################
+Spring에서의 트랜잭션 처리 ( Service 클래스에서 처리 )
+
+1) JDBC 트랜잭션 처리
+
+  public int insert(DeptDTO dto){
+     Connection con = null;
+
+     try{
+        con = DriverManager.getConnection(url, username, passwd);
+       ..
+        con.setAutoCommit(false);
+        //DAO연동하면서 트랜잭션 처리 
+        dao.insert(dto);
+	dao.update(20);
+        con.commit();
+     }catch(Exception e){
+        con.rollback();
+     }
+  }
+
+2) 이전 MyBatis  트랜잭션 처리 
+
+    public int insert(DeptDTO dto){
+       SqlSession session = MySqlSessionFactory.openSession();
+
+       try{
+        //DAO연동하면서 트랜잭션 처리 
+	 dao.insert(dto);
+	 dao.update(20);
+	session.commit();
+       }catch(Exception e){
+         session.rollback();
+       }finally{
+         session.close();
+       }
+    }
+
+ ==> JDBC는 기본적으로 compile checked 예외를 발생시킨다. 무조건 try~catch, throws가 필수( IOException, SQLException )
+     Mytatis는 기본적으로 compile unchecked 예외를 발생시킨다. ( RuntimeException )
+
+3) Spring의 트랜잭션 처리
+https://docs.spring.io/spring-framework/docs/5.2.25.RELEASE/spring-framework-reference/data-access.html#transaction-declarative-annotations
+  가. 서비스클래스에서 메서드 레벨에   @Transactional 지정 ( 클래스 레벨에 지정하면 클래스내의 모든 메서드가 트랜잭션으로 처리가 된다. )
+   @Transactional
+   public int insertXXX(DeptDTO dto){
+	//DAO연동하면서 트랜잭션 처리 
+        dao.insert(dto);
+	dao.update(20);
+   }
+
+  @Transactional ====> insertXXX 메서드에서 수행된 DML작업이 모두 성공하면 자동으로 commit하고
+                       만약에 수행된 DML작업에서 하나라도 RuntimeException이 발생되면 자동으로 rollback 처리됨.
+
+  나. @Transactional 활성화
+    
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <!-- (this dependency is defined somewhere else) -->
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <tx:annotation-driven transaction-manager="txManager"/>
+    
+     또는
+
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <tx:annotation-driven />
+
+
+#####################################################################
