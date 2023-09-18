@@ -810,3 +810,237 @@ https://docs.spring.io/spring-framework/docs/5.2.25.RELEASE/spring-framework-ref
 
 
 #####################################################################
+Spring MVC
+
+1. sts에서 프로젝트 생성
+
+  File > new > Spring legacy project >  프로젝트명 지정하고 templates 항목에서 Spring MVC Project를 선택한다.
+
+  스프링에서 제공해주는 클래스의 패키지명을 입력한다. (메인패키지.sub.sub2 지정)
+  sub2 패키지명이 자동으로 Context명이 된다.
+  예> com.xxx.app 지정하면 자동으로 app가 context명이 된다.
+
+     http://localhost:8090/context명/서블릿맵핑명
+
+     http://localhost:8090/app 가 된다.
+
+2. pom.xml 에서 수정
+
+  가. spring framework 버전 수정
+  <org.springframework-version>3.1.1.RELEASE</org.springframework-version>
+
+  <org.springframework-version>5.2.25.RELEASE</org.springframework-version>
+
+ 
+  나. JDK 버전
+     <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.5.1</version>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+
+    <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.5.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+
+ ==> 프로젝트 오른쪽 클릭후 maven > update project 선택하면 새롭게 갱신된다.
+
+3. 디렉토리 구조 확인
+
+ 가. 이전 서블릿/jsp
+  
+    Webcontent -> WEB-INF -> web.xml ( 서블릿 맵핑, Filter 등록 )
+               -> JSP/html/image/css/js
+      
+
+ 나. 스프링 MVC
+
+   src
+     - main
+         - java
+	     - *.java 
+         - webapp ( Webcontent와 동일 )
+	      - WEB-INF
+	           - web.xml
+                   - views
+		        - *.jsp (외부에서 직접 jsp 접근 금지)
+
+		   -spring
+		       - root-context.xml ( 스프링 설정 파일)
+		       - appServlet
+		           - servlet-context.xml ( 스프링 설정 파일)
+
+4. root-context.xml 복사해서 servlet-context.xml에 덮어쓰기함.
+
+5. SpringMVC 에서도 MVC 패턴 기반이기 때문에 서블릿이 필요하다.
+   스프링에서는 서블릿을 생성해서 제공한다. ( DispachterServlet )
+   web.xml에서 DispachterServlet을 서블릿맵핑한다. ( 맵핑값: / 로 되어있음)
+
+   요청 URL:
+      http://localhost:8090/context명/서블릿맵핑명
+
+      http://localhost:8090/app/  ==> DispachterServlet이 요청을 받는다.
+
+
+6. spring configuration 파일(xml) 등록
+
+  가. 이전 xml 등록
+
+     main메서드에서 
+     GenericXmlApplication ctx = 
+         new GenericXmlApplication("classpath:com/config/spring-config.xml", "xx.xml");
+
+     GenericXmlApplication ctx = 
+         new GenericXmlApplication("classpath:com/config/*.xml");
+
+  나. spring mvc에서 등록
+ 
+    a. servlet-context.xml 등록 ( contextConfigLocation key값은 고정값이다. )
+      
+       DispachterServlet 등록시 init-param으로 xml을 등록한다. 
+       	<servlet>
+		<servlet-name>appServlet</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>/WEB-INF/spring/appServlet/servlet-context.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+     멀티 xml 등록이 가능하다.
+      	<servlet>
+		<servlet-name>appServlet</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>
+			  /WEB-INF/spring/appServlet/servlet-context.xml
+                          /WEB-INF/spring/appServlet/test-context.xml
+			  /WEB-INF/spring/appServlet/work-context.xml
+			</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+    멀티 xml 등록시 *로 지정 가능하다.
+        <servlet>
+		<servlet-name>appServlet</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>
+			  /WEB-INF/spring/appServlet/*-context.xml
+ 			</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+    b. root-context.xml
+        ==> <context-param>으로 등록하고 ContextLoaderListener로 활성화 시킨다.
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>/WEB-INF/spring/root-context.xml</param-value>
+	</context-param>
+	
+	<!-- Creates the Spring Container shared by all Servlets and Filters -->
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+
+7. Spring MVC 아키텍쳐 ( 매우 중요하다. 외우기 )
+ 
+   가. 이전 서블릿/jsp 요청 URL
+      - http://localhost:8090/컨텍스트명/서블릿맵핑
+
+      예> http://localhost:8090/xxx/hello
+
+      - 모든 요청처리 및 응답처리를 서블릿에서 모두 처리했음. ( 우리가 직접 서블릿을 작성했기 때문이다. )
+
+                                 
+ 브라우저 --------->  MyServlet---> XXXService --> XXXDAO ----> 오라클
+        <-----              <---           <--    
+         jsp선택
+
+   나. Spring MVC 요청 URL
+
+      - http://localhost:8090/컨텍스트명/서블릿맵핑/요청맵핑
+
+    예> http://localhost:8090/app/요청맵핑
+
+      - 스프링에서는 DispatcherServlet 라는 서블릿을 제공하기 때문에 요청처리 및 응답처리를 서블릿에서 처리할 수 없다.
+        대신 Controller 클래스가 이전 서블릿에서 했던 요청처리 및 응답처리 한다.
+
+
+     http://localhost:8090/app/요청맵핑값  ==> 요청맵핑값에 의해서 실제로 처리되는 XXXController 선택이 된다.
+
+     http://localhost:8090/app/del --> DeleteController
+     http://localhost:8090/app/add --> InsertController
+
+                                               @Controller           @Service      @Repository
+ 브라우저 ---------> DispatcherServlet(제공)-----> XXXController ---> XXXService --> XXXDAO ----> 오라클
+                                       <-----                  <---            <--    
+                                        jsp 선택
+
+ 8. Controller 클래스
+   - POJO 기반 ( 어떤것 클래스 및 인터페이스를 상속받거나 구현하지 않은 순수한 클래스 의미)
+     Plain Old Java Object
+
+   - 반드시 @Controller 어노테이션을 지정한다.
+   - 반드시 servlet-context.xml에 빈으로 등록해야 된다. ( 1) 명시적으로 <bean> 이용, 2) component-scan )
+
+   예> 저장하는 기능
+
+      @Controller
+      public class InsertController{
+
+	    //url의 요청맵핑값(add)과 Controller안의 특정메서드를 묶어야 된다.	
+	    @RequestMapping("/add")  // 주의할점: /로 시작함
+	    public void insert(){
+		 // 저장기능
+	    }
+      }
+     삭제하는 기능
+     @Controller
+      public class DeleteController{
+
+	   //url의 요청맵핑값(del)과 Controller안의 특정메서드를 묶어야 된다.	
+	    @RequestMapping("/del")
+	    public void delete(){
+		 // 삭제기능
+	    }
+      }
+
+     ==> 모든 기능을 하나의 Controller에서 처리할 수도 있다. ( 일반적인 코드 )
+        주의할 점은 요청 맵핑값은 반드시 /로 시작해야 되고 유일한 값이어야 된다.
+    @Controller
+      public class DeptController{
+
+	   //url의 요청맵핑값(del)과 Controller안의 특정메서드를 묶어야 된다.	
+	   // 요청url: http://localhost:8090/app/del
+	    @RequestMapping("/del")
+	    public String delete(){
+	          //요청처리 ( 삭제기능 )
+		
+		  //응답처리 : 보여줄 jsp 설정 (  /WEB-INF/views/main.jsp )
+		  return "/WEB-INF/views/main.jsp";  // 이전 서블릿의 forward 기능과 동일
+	    }
+
+            // 요청url: http://localhost:8090/app/add
+	    @RequestMapping("/add")  
+	    public String insert(){
+		 // 요청처리 (저장기능)
+
+		 //응답처리 : 보여줄 jsp 설정   (  /WEB-INF/views/list.jsp )
+		 return "/WEB-INF/views/list.jsp";  // 이전 서블릿의 forward 기능과 동일
+	    }
+      }
+        // 이전 서블릿에서의 forward 기능
+       reqeust.getRequestDispatcher("/WEB-INF/views/list.jsp").forward(request, response);
+#############################################################
