@@ -1,1 +1,196 @@
+Spring MVC와 MyBatis 연동
+1) 의존성 설정  (dependency 5개) 설정 (pom.xml에서)
+	- ojdbc6_g.jar (오라클 드라이버)
+	- mybatis.jar (마이바티스 라이브러리)
+
+	*스프링에서 추가
+	- spring-jdbc.jar
+	- spring-mybatis.jar
+	- commons-jdbc.jar 
+	* SpringBoot에서는 HikariCP 라이브러리가 기본이다.
+<dependency>
+    <groupId>org.mybatis</groupId>
+    <artifactId>mybatis</artifactId>
+    <version>3.4.6</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/org.mybatis/mybatis-spring -->
+<dependency>
+    <groupId>org.mybatis</groupId>
+    <artifactId>mybatis-spring</artifactId>
+    <version>1.3.2</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/org.springframework/spring-jdbc -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-jdbc</artifactId>
+    <version>5.0.8.RELEASE</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-dbcp2 -->
+<dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-dbcp2</artifactId>
+    <version>2.5.0</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/com.jslsolucoes/ojdbc6 -->
+<dependency>
+    <groupId>com.jslsolucoes</groupId>
+    <artifactId>ojdbc6</artifactId>
+    <version>11.2.0.1.0</version>
+</dependency>
+
+2) jdbc.properties 작성 및 등록 
+ ( src/main/resources 폴더에 com.config 패키지 만들고 config 밑에 jdbc.properties 파일 만들기 )
+jdbc.properties에 4가지 정보 등록
+
+jdbc.driver=oracle.jdbc.driver.OracleDriver
+jdbc.url=jdbc:oracle:thin:@localhost:1521:xe
+jdbc.username=SCOTT
+jdbc.password=TIGER
+
+ 반드시 root-context.xml에 등록한다.
+
+ (네임스페이스에서 context 선택 필수로 먼저 해주기)
+ <context:property-placeholder location="classpath:com/config/jdbc.properties"/>
+
+3)
+(root-context.xml에서 설정)
+ jdbc.properties 등록된 4개의 정보를 이용해서 DB 연동하는 DataSource 설정
+   ==> Apache 그룹에서 제공한 commons-dbcp2 라이브러리를 사용한다. ( HikariCP 라이브러리도 무관)
+
+   commons-dbcp2라이브러리에 있는 DBCP 기능의 빈을 등록 ==> BasicDataSource
+
+    <bean id="xxx" class="org.apache.commons.dbcp2.BasicDataSource">
+      <property name="driverClassName" value="${jdbc.driver}" />
+      <property name="url" value="${jdbc.url}" />
+      <property name="username" value="${jdbc.username}" />
+      <property name="password" value="${jdbc.password}" />
+    </bean>
+
+4) com.dto.DeptDTO 작성
+5)  DeptMapper.xml 작성 ( 2)번에서 만들어 둔 src/main/resources 폴더의 com.config 패키지 )
+6) 이전 MyBatis에서 사용했던 SqlSessionFactory 역할의 빈을 등록 ==>  SqlSessionFactoryBean
+
+ (root-context.xml에 등록)
+ <bean id="sessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+       <property name="dataSource" ref="xxx" />
+       <property name="mapperLocations">
+         <list>
+          <value>classpath:com/config/DeptMapper.xml</value>
+         </list>
+       </property>
+       <property name="typeAliases">
+         <list>
+           <value>com.dto.DeptDTO</value>
+         </list>
+       </property>
+    </bean>
+
+ 6-1) dto 가서 별칭 지정
+    @Alias("DeptDTO")
+    public class DeptDTO {
+
+7)  이전 MyBatis에서 사용했던 SqlSession 역할의 빈을 등록 ==>  SqlSessionTemplate
+    ==> setter 메서드가 제공안됨. 따라서 생성자로 주입해야 됨.
+     (root-context.xml에 등록) 
+     <bean id="session" class="org.mybatis.spring.SqlSessionTemplate">
+       <constructor-arg name="sqlSessionFactory" ref="sessionFactory" />
+     </bean>
+
+8) DAO, Service , Controller(Main역할) 작성하고 
+
+        @Repository("dao")
+	public class DeptDAO {
+
+	}
+
+        @Service("deptService")
+	public class DeptServiceImpl implements DeptService {
+
+	}
+
+	@Controller
+	public class TestController {
+
+	}
+ 8-1) xml에 DAO, Service, Controller 등록( Component-scan )
+     <!-- DAO, Service 빈으로 등록 -->
+    <context:component-scan base-package="com.*" />     ==> 중요: 반드시 servlet-context.xml에서 지정, 네임스페이스로 context 선 등록 필수
+
+ 9) DAO에서 SqlSessionTemplate (root-context.xml에서 등록했던 걔)주입받고  원하는 메서드 입력하여 사용한다.
+
+    @Repository("dao")
+public class DeptDAO {
+
+	@Autowired
+	SqlSessionTemplate session; // 세션 주입받기 
+	// 목록보기
+	public List<DeptDTO> findAll(){
+		return session.selectList("DeptMapper.findAll");
+	}
+ 9-1) DAO에서 작성한 메서드 바탕으로 (ex.목록보기)  서비스 -> 서비스 임플 작업 
+
+10) InternalResourceViewResolver 등록 (반드시 servlet-context.xml에 등록) <!-- 필요시 mvc: 설정 가능  -->
+<!-- JSP 용 InternalResourceViewResolver 등록 -->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+       <property name="prefix" value="/WEB-INF/views/" />
+       <property name="suffix" value=".jsp" />
+    </bean>
+
+11) jsp에서 JSTL 사용
+ 11-1) WEB-INF 밑에 lib 밑에 두 개의 jar 파일 사용했음 (이전 서블릿)
+	WEB-INF
+	  - lib
+            - *.jar
+ (그러나 스프링에서는 자동으로 의존성 설정 되어있음, 1.2버전으로, pom.xml 가면 확인 가능)
+(하지만 c 태그는 사용해주어야함)
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+
+######################################
+트랜잭션도 추가 가능
+
+ 가. @Transactional 활성화 (반드시 root-context.xml에 등록) <!-- 네임스페이스에서 tx 활성화 필수 -->
+    위치는 dataSource 빈 밑에 (트랜잭션이 데이터소스를 써야하기 때문)
+    
+    <!-- 트랜잭션 처리  --> 
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <!-- (this dependency is defined somewhere else) -->
+        <property name="dataSource" ref="xxx"/>
+    </bean>
+    <tx:annotation-driven transaction-manager="txManager"/>
+   <!-- 트랜잭션 처리 끝 -->   
+    
+     또는
+
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <tx:annotation-driven />
+
+
+ 나. 서비스클래스에서 메서드 레벨에   @Transactional 지정 ( 클래스 레벨에 지정하면 클래스내의 모든 메서드가 트랜잭션으로 처리가 된다. )
+   @Transactional
+   public int insertXXX(DeptDTO dto){
+	//DAO연동하면서 트랜잭션 처리 
+        dao.insert(dto);
+	dao.update(20);
+   }
+
+  @Transactional ====> insertXXX 메서드에서 수행된 DML작업이 모두 성공하면 자동으로 commit하고
+                       만약에 수행된 DML작업에서 하나라도 RuntimeException이 발생되면 자동으로 rollback 처리됨.
+
+ ** POST 방식의 한글처리
+     - Filter API 적용 ( CharacterEncodingFilter 제공됨, web.xml 등록) )
+
+       <filter>
+		<filter-name>filter</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>utf-8</param-value>
+		</init-param>
+	</filter>
+		
+	<filter-mapping>
+		<filter-name>filter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
 
