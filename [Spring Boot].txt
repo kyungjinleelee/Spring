@@ -1,0 +1,344 @@
+[Spring Boot]
+1. 환경설정
+- JDK 1.8
+- springboot 2.4.2 버전 
+- STS 3.9.14 버전 
+- 톰캣은 필요 없음 (Spring boot에 이미 내장되어 있기 때문)
+
+* 설치방법
+- c 밑에 boot_study 폴더 생성 
+- spring_study에서 썼던 sts 복사해서 붙여넣기
+- 압축 풀고 C:\boot_study\sts-bundle\sts-3.9.14.RELEASE 경로에 workspace 폴더 생성
+- sts.exe 실행 후 workspace 폴더로 경로 결정 해주기
+- 실행 후 window -> preference -> general -> workspace 가서 utf-8, web -> css, html, jsp를 utf-8로  바꿔주기 
+- preference -> 서버 -> runtime environment 가서 있는 서버 remove -> 실행 창 있는 서버까지 삭제해주기 (package explorer)
+
+2. boot 프로젝트 생성
+ 가. 웹 사이트 이용 (initializer 방법) (일반적이지는 않음) 
+ http://start.spring.io
+  - project에선 maven 선택, 랭귀지에는 java, springboot에선 2.7.15 (최저버전), java는 8버전 선택, dependency(의존
+  - dependency는 나중에 설정 (add dependencies)
+ - packaging은 jar과 war가 있는데, 
+	무조건 jar로 배포할 수도 있고 더 명확하게 하려면 구분해서 배포할 수도 있음
+	(톰캣을 내장하기 때문에 상관 없음)
+ - generate 클릭 -> 만들어서 다운로드까지 해줌 
+ - 다운로드 받은 파일을 boot_study의 workspace 밑에 압축 해제 
+ - import -> maven -> existing maven project로 가서 압축 푼 demo 선택하고 finish (처음에는 임포트할 때 시간이 좀 걸림)
+
+ 나. sts에서 로컬 이용
+ - file > new > spring starter project > 타입 알맞게 설정 > next > boot version 설정 > next > finish
+ - 생성 후 pom.xml 가서 원하는 버전으로 바꾸기 (필요 시) (5.번에 가.참고)
+
+3. 배포 방법 비교
+ 가. spring framework
+   	비웹(웹이 아닌)어플리케이션 개발 (main 포함) 배포 : jar 형식으로 배포
+	웹 어플리케이션 개발 : war 형식으로 배포
+ 나. spring boot 
+	비웹(웹이 아닌)어플리케이션 개발 (main 포함) 배포 : jar 형식으로 배포
+	웹 어플리케이션 개발 : jar 및 war 형식으로 배포
+
+4. 의존성 (dependency)
+ 가. spring framework : 필요한 의존성은 개별적으로 추가했음
+나. spring boot : 필요한 의존성들을 묶어서 하나의 dependency로 제공함 = starter 개념 (ex. xxx-starter, mybatis-starter)
+
+5. 구조 
+ 가. pom.xml (원하는 boot 버전으로 변경)
+<parent>
+<groupId>org.springframework.boot</groupId>
+<artifactId>spring-boot-starter-parent</artifactId>
+<version>2.4.2</version>
+<relativePath/> <!-- lookup parent from repository -->
+</parent>
+
+나. src/main/java
+- main 메서드 포함 (무조건 있어야 함)
+ ====> boot에서는 @SpringBootApplication 지정된 어플리케이션 파일은 반드시 존재해야함 (웹개발 비웹개발 모두 application이 실행됨)
+ ====> 배포 시 web일지라도 jar로 배포 가능
+	* @SpringBootApplication의 3가지 기능
+	 @SpringBootConfiguration : 추가적인 Configuration 설정이 가능 
+	 @EnableAutoConfiguration : starter 이용해서 거의 자동으로 필요한 설정을 자동화
+	 @ComponentScan : 자동으로 빈 생성 (스프링 프레임워크에서 xml에 <context:component-scan basepackes="com/*" 한 것과 동일 
+
+다. boot에서는 스프링 프레임워크에서 사용했던 xml 지원 x 
+ -> 대신 src/main/resource의 application.properties 파일에서 설정 (또는 application.yml(야물)파일 사용 가능)
+
+라. boot 프로젝트 실행 
+ 어플리케이션 우클릭 > run as > 3 spring boot app 클릭 
+혹은 좌측 하단 local > 프로젝트 선택 > restart 클릭 
+
+6. 특징 
+ 1) 스프링 부트 - 스프링 프레임워크의 랩퍼(wrapper)기능 
+ 2) 특징 
+  - 웹 어플리케이션도 jar 형식으로 배포 가능 (war도 가능)
+   - 거의 자동화
+   - xml 사용 하지않음. 대신 src/main/resource 폴더에 application.properties(application.yml) 이용
+  - 의존성은 여러 의존성을 패키지로 묶은 starter 개념 이용
+   - 내장 tomcat 사용 가능
+   - spring mvc에서 기본화면처리는 jsp가 아님, 권장하는 화면처리 기술은 thymeleaf (타임리프, *.html) 
+   - 스프링 부트에서는 Application.java 필수
+   - 기본 로깅은 logback
+  - DB 연동 시 사용하는 기본 DBCP는 HicariCP 라이브러리임 (apache아님)
+
+##############################################################
+[spring boot 문법 정리]
+
+1. 빈 생성 ( 권장하는 방법 )
+	com.exam
+  		 @SpringBootApplication
+          	 - Application.java
+	   	- service
+	   	     - *.java
+          	 - dao
+	             - *.java
+
+2. 의존성 설정 ( DI : Dependency Injection )
+ 1) @Autowired
+ 2) 생성자 이용 (어노테이션 이용 안함)
+	- 원래는 스프링 프레임워크 문법 (4.3 이후 사용 가능)
+ 	- 주의할점은 기본 생성자 지정하면 안됨.
+
+3. 빈 접근 방법
+ 1) spring framework
+       main(){
+     ApplicationContext ctx = new GenerieXmlApplicationContext("dept.xml");
+     DeptService service = ctx.getBean("xxx", DeptService.class);
+
+ 2) spring boot
+	main(){ 
+	  ApplicationContext ctx = SpringApplication.run(Application.class, args);
+	  DeptService service =   ctx.getBean("xxx", DeptService.class);
+
+##################################################################
+4. I18N 실습
+
+  가. src/main/resource 에  
+      xxx_en.properites  
+      xxx_ko.properties 
+      xxx.properties  (필수) 작성
+  
+  나. application.properties 설정
+
+   spring.messages.basename=message/shop
+   spring.messages.encoding=utf-8
+   spring.messages.fallback-to-system-locale=false
+
+   true로 지정: 시스템의 로케일을 따른다. ( 현재는 한국어 임)
+   false 지정: 시스템의 로케일을 안따르고 기본 properties를 실행한다.
+
+
+  다. 사용
+
+    a. Application.java
+         main(){
+         ApplicationContext ctx  =   SpringApplication.run(Application.class, args);
+		String mesg = ctx.getMessage("greeting", null, null, 
+				Locale.KOREA);		
+
+    b. DeptService.java
+
+        @Autowired
+	MessageSource ctx;
+
+#######################################################################################
+
+5. AOP ( Aspect Oriented Programming )
+ - 기본 기능과 부수 기능 분리
+  - 의존성은 mvcrepository -> aop starter 검색 -> 아무데나 들어가서 pom.xml 복붙하고 버전은 삭제
+
+1) spring framework 
+    <dependency>
+	    <groupId>org.aspectj</groupId>
+	    <artifactId>aspectjweaver</artifactId>
+	    <version>1.9.4</version>
+    </dependency>
+    <!--aop 활성화 -->
+    <aop:aspect-j
+
+2) spring boot 
+    <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-aop -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-aop</artifactId>
+    </dependency>
+
+// aop 활성화 방법
+   a. Application.java에 @EnableAspectJAutoProxy 어노테이션 추가
+   b. application.properties에 추가 (권장)
+   spring.aop.auto=true
+
+############################################################
+
+[spring boot 데이터 (MyBatis) 연동]
+
+1. 스프링 프레임워크의 4개의 의존성을 포함한 mybatis starter 설정/
+  -  mvnrepository > mybatis starter 검색 > 2.1.4 버전 선택하고 pom.xml에 코드 복붙 
+
+ <!-- https://mvnrepository.com/artifact/org.mybatis.spring.boot/mybatis-spring-boot-starter -->
+ <dependency>
+    <groupId>org.mybatis.spring.boot</groupId>
+    <artifactId>mybatis-spring-boot-starter</artifactId>
+    <version>2.1.4</version>
+ </dependency>
+ 
+ <dependency>
+    <groupId>com.jslsolucoes</groupId>
+    <artifactId>ojdbc6</artifactId>
+    <version>11.2.0.1.0</version>
+ </dependency>
+
+2. src/main/resource에 com/config 패키지 밑에  DeptMapper.xml (SQL문) 생성 
+3. com.exam.dto.DeptDTO 만들고 별칭 생성 (@Alias) 
+      - 스프링 프레임워크는 com.dto.DeptDTO
+
+4. 만든 DeptMapper.xml과 DeptDTO를 application.properties에 등록 
+	- 스프링프레임워크에서는 xml에 등록함
+ # mybatis Mapper와 dto 등록
+ mybatis.mapper-locations=com/config/DeptMapper.xml ( ==> 경로를 모두 작성)
+ mybatis.type-aliases-package=com.exam.dto                 ( ==> 패키지 이름을 등록, 별칭을 인식할 수 있도록 도와줌)
+     
+    ** 매퍼 추가는 
+       mybatis.mapper-locations=com/config/*Mapper.xml 별표 찍거나 
+       mybatis.mapper-locations=com/config/DeptMapper.xml,MemberMapper.xml 쉼표 찍고 계속 작성해도 됨
+
+5. DBCP 4가지 정보 등록  ( application.properties에 )
+  spring.datasource.driver-class-name=oracle.jdbc.driver.OracleDriver
+  spring.datasource.url=jdbc:oracle:thin:@localhost:1521:xe
+  spring.datasource.username=SCOTT
+  spring.datasource.password=TIGER
+
+연동끝 !! 
+
+6. 빈 생성 및 주입
+   - dao 만들기 > service 인터페이스 만들기 > serviceImpl에서 오버라이딩작업 해주기 
+
+<< dao >> - dao에선 세션 주입받기 
+	@Repository("deptDAO")
+	public class DeptDAO {
+
+	@Autowired
+	SqlSessionTemplate session;    // boot는 자동으로 SqlSessionTemplate을 생성해줌
+
+	// 메서드 구현 (목록보기 예시)
+	public List<DeptDTO> deptList(){
+		List<DeptDTO> list = session.selectList("DeptMapper.deptList");
+		return list;
+		}
+
+<< service >>
+	public interface DeptService {
+		public List<DeptDTO> deptList();
+	}
+
+<< serviceImpl >> - 서비스에선 dao 주입받기 
+	@Service("xxx")
+	public class DeptServiceImpl implements DeptService {
+		
+		@Autowired
+		DeptDAO dao; // dao 주입 
+
+		@Override
+		public List<DeptDTO> deptList() {
+			return dao.deptList();
+		}
+	}
+
+###############################################################
+
+[ boot MVC ]
+
+1. spring MVC에서 필요한 starter 의존성 추가 필요.
+   - pom.xml 21라인에 -web 추가해주기 
+   <dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-web</artifactId>
+   </dependency>
+  ==> 부수적으로 내장 tomcat이 설치됨. (기본 port는 8080)
+   ==> port 번호 변경 
+ 	- application.properties에서 설정
+	- server.port=8092(설정할 포트 번호)
+
+2. spring mvc에서 기본화면처리는 jsp가 아닌 thymeleaf. jsp 사용하기 위해서는 의존성 추가 필요. (pom.xml)
+	- spring framework에서는 의존성을 자동으로 제공
+
+ <!-- https://mvnrepository.com/artifact/org.apache.tomcat.embed/tomcat-embed-jasper -->
+ <dependency>
+    <groupId>org.apache.tomcat.embed</groupId>
+    <artifactId>tomcat-embed-jasper</artifactId>
+ </dependency>
+
+ <dependency>
+    <groupId>javax.servlet</groupId>
+    <artifactId>jstl</artifactId>
+ </dependency>
+
+3.  maven이 제공하는 웹 구조도 자동으로 제공 안됨. 필요시 명시적으로 작성해야한다
+ 3-1) (우클릭 > new > folder) 
+   src > main > webapp > WEB-INF > views > jsp파일 순으로 만들기 
+   <구조도>
+     src
+       - main
+	  - webapp
+	      - WEB-INF
+		  - views
+		      - hello.jsp
+
+ 3-2)  application.properties에 이전 스프링 프레임워크의 InternalResourceViewResolver 등록
+ # InternalResourceViewResolver 등록
+ spring.mvc.view.prefix=/WEB-INF/views/
+ spring.mvc.view.suffix=.jsp
+
+4. controller 생성 
+   - com.exam.controller 생성  ( com.exam 밑에 서브패키지로 만드는 것만 주의 )
+   - 문법은 스프링 프레임워크 문법과 동일
+
+5. context 명
+  1) 기존 스프링 프레임워크 
+	- 자동으로 jsp 불러줌 
+	http://localhost:8090/컨텍스트명/요청맵핑		ex) http://localhost:8090/app/main 
+ 
+  2) 스프링 부트 
+	- 기본이 / , 불편하지만 직접 브라우저 띄워서 요청해야함 
+	http://localhost:8090/요청맵핑 	ex) http://localhost:8090/main 
+ 
+5-1) context명 변경 가능
+# context명 변경 가능  ( application.properties )
+server.servlet.context-path=/app	// ex)  http://localhost:8092/app/main
+   
+#########################################################
+
+[게시판 실습]
+ 1. 의존성 설정
+     가. spring mvc 관련된 의존성 ( starter )
+	<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-web</artifactId>
+   	</dependency>
+ 
+   나. jsp 의존성
+	<!--jsp 및 jstl 관련 의존성 -->
+	<dependency>
+    	<groupId>org.apache.tomcat.embed</groupId>
+    	<artifactId>tomcat-embed-jasper</artifactId>
+ 	</dependency>
+
+ 	<dependency>
+    	<groupId>javax.servlet</groupId>
+    	<artifactId>jstl</artifactId>
+ 	</dependency>
+
+   다. mybatis 관련된 의존성  ( starter)
+	<!-- mybatis 연동 스타터 코드  -->
+	<dependency>
+    	<groupId>org.mybatis.spring.boot</groupId>
+    	<artifactId>mybatis-spring-boot-starter</artifactId>
+    	<version>2.1.4</version>
+	</dependency>
+
+   라. oracle 11g 의존성
+	<!-- 오라클 11g 드라이버 -->
+	<dependency>
+    	<groupId>com.jslsolucoes</groupId>
+    	<artifactId>ojdbc6</artifactId>
+    	<version>11.2.0.1.0</version>
+	</dependency>
+
