@@ -306,7 +306,7 @@ server.servlet.context-path=/app	// ex)  http://localhost:8092/app/main
    
 #########################################################
 
-[게시판 실습]
+[notice 실습]
  1. 의존성 설정
      가. spring mvc 관련된 의존성 ( starter )
 	<dependency>
@@ -342,3 +342,234 @@ server.servlet.context-path=/app	// ex)  http://localhost:8092/app/main
     	<version>11.2.0.1.0</version>
 	</dependency>
 
+2. 포트 번호 및 context 명 변경 - application.properties에서 설정
+  - server.port=8092 (설정할 포트번호)
+
+    - server.servlet.context-path=/app
+
+3. jsp 사용하기 	- application.properties에서 설정
+ 3-1) InternalResourceViewResolver 등록
+	 # InternalResourceViewResolver 
+	spring.mvc.view.prefix=/WEB-INF/views/
+	spring.mvc.view.suffix=.jsp
+
+ 3-2) web 구조 생성 
+    src > main > webapp > WEB-INF > views > jsp파일 순으로 만들기 
+
+4. Mybatis 이용한 DB 연동 
+  1) com.exam.dto.Notice.java , ( 매퍼에서 별칭을 쓸 것이기 때문에 @Alias로 별칭 생성해주기 ) 
+    com.exam.dto.PageDTO.java 생성 (DTO 역할)
+
+  2) src/main/resource에  com.config.NoticeMapper.xml  생성 (SQL문)
+
+ 3) DB 연동을 위한 4가지 정보 설정 ( application.properties)
+  # DB연동 4가지 정보 
+  spring.datasource.driver-class-name=oracle.jdbc.driver.OracleDriver
+  spring.datasource.url=jdbc:oracle:thin:@localhost:1521:xe
+  spring.datasource.username=SCOTT
+  spring.datasource.password=TIGER
+
+ 4) NoticeMapper.xml 와 DTO 별칭  등록 ( application.properties)
+# mybatis Mapper와 dto 별칭 등록
+mybatis.mapper-locations=com/config/NoticeMapper.xml
+mybatis.type-aliases-package=com.exam.dto
+
+ 설정 끝 !!!!
+
+ 5) DAO 생성 
+	- com.exam.dao 패키지 (서브패키지로 만들어야 한다는 점)
+ 	- @Autowired로 세션 주입받기 
+  6) Service 생성 
+	- com.exam.service 패키지 
+	- @Autowired로 dao 주입받기 
+  7) Controller 생성
+	- com.exam.controller 패키지
+	- @Autowired로 service 주입받기 
+  8) JSP 생성 
+
+##################################################################################
+
+4. 리소스( image, js, css ) 보여주기
+
+  가. 기존 spring framework
+
+     .....
+     webapp
+       - WEB-INF
+            - css
+	    - js
+	    - images
+
+    <mvc:resources location="/WEB-INF/js/" mapping="/js/**" />
+
+  나. spring boot
+
+     src/main/resources/
+                      -static 폴더
+		            - css
+			    - js
+    	                    - images
+
+                  ==> JSP에서 자동인식됨.
+		  <img src="images/daum.png" width="100" height="100" /><br>
+
+
+
+
+5. 스프링 부트는 코드 변경시 서버 리로딩이 자동으로 안됨. ====> devtools 의존성 이용하면 자동으로 리로딩됨.
+
+  <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-devtools -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-devtools</artifactId>
+</dependency>
+
+###########################################################################
+1. JSON 처리 (@ResponseBody)
+
+               요청: JSON--> 클래스 변환  @RquestBody
+    브라우저(JS) -----------------> Controller (java)
+       json   <-----------------  클래스(문자열,DTO,List)
+               응답:  클래스--> JSON 변환
+                                     @ResponseBody
+               
+      요청:   @RquestBody + 의존성
+      응답:   @ResponseBody + 의존성
+       <dependency>
+	    <groupId>com.fasterxml.jackson.core</groupId>
+	    <artifactId>jackson-databind</artifactId>
+	    <version>2.14.2</version>
+	</dependency>	
+
+   가. 이전 스프링 프레임워크
+        - pom.xml에 jackson-databind 의존성을 설정함.
+        - Controller에서 처리
+	@ResponseBody  // LoginDTO ===> JSON 로 변경
+	public LoginDTO yyy() {
+        - jsp에서는 JS(jQuery) 이용해서 Controller에서 응답하는 JSON 데이터를 처리한다.
+
+   나. spring boot
+       -  pom.xml에 jackson-databind 의존성을 설정 안함.
+        이유는 spring-boot-starter-web 에 자동으로 포함되어 있음.
+       - Controller에서 처리
+	@ResponseBody  // LoginDTO ===> JSON 로 변경
+	public LoginDTO yyy() {
+       - jsp에서는 JS(jQuery) 이용해서 Controller에서 응답하는 JSON 데이터를 처리한다.
+
+
+2. JSON 처리 (@RequestBody)
+
+             요청: JSON--> 클래스 변환  @RquestBody
+    브라우저(JS) -----------------> Controller (java)
+
+
+     가. 이전 스프링 프레임워크
+        - pom.xml에 jackson-databind 의존성을 설정함.
+	- jsp의 js에서 JSON 전달 ( 주의할점은 문자열 형식 )
+
+	  "{userid:'홍길동',passwd:'1234'}"
+         => data:JSON.stringify({userid:"홍길동",passwd:"1234"}),  
+	- 반드시 Controller에서 처리할 데이터 정보 지정 (header 정보)
+	  headers:{     // 요청 데이터 타입
+		 "Content-Type":"application/json"
+	 }
+
+	- Controller에서는 @RequestBody 사용
+	@PostMapping("/yyy")
+	public String yyy(@RequestBody LoginDTO dto) {
+
+    나. spring boot
+       -  pom.xml에 jackson-databind 의존성을 설정 안함.
+       - jsp의 js에서 JSON 전달 ( 주의할점은 문자열 형식 )
+
+	  "{userid:'홍길동',passwd:'1234'}"
+         => data:JSON.stringify({userid:"홍길동",passwd:"1234"}),  
+	- 반드시 Controller에서 처리할 데이터 정보 지정 (header 정보)
+	  headers:{     // 요청 데이터 타입
+		 "Content-Type":"application/json"
+	 }
+
+	- Controller에서는 @RequestBody 사용
+	@PostMapping("/yyy")
+	public String yyy(@RequestBody LoginDTO dto) {
+
+#########################################
+3. @RestController 
+
+   - 개요
+   브라우저 --------------------> AController
+         <-------------------
+
+   AController의 모든 메서드(10개 가정)가 @ResponseBody를 사용한다면
+   10 번 @ResponseBody 지정해야 된다.
+   비효율적이다.
+   @RestController = @Controller + @ResponseBody
+
+   - Spring Framework 및 Spring boot 모두 사용 가능.
+
+
+4. 파일 업로드
+
+  가. 이전 스프링 프레임워크
+   
+     - 2개의 의존성 설정 필요
+       commons-fileupload, commons-io
+
+     - jsp 
+     <form action="upload" method="post" enctype="multipart/form-data">
+        comment:<input type="text" name="theText"><br>
+          file:<input type="file" name="theFile"><br>
+     - DTO
+       public class UploadDTO {
+
+	String theText;
+	CommonsMultipartFile theFile;
+
+     - servlet-context.xml 에서 
+          <bean id="multipartResolver"
+	  class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+          </bean>
+
+     - Controller 
+      @PostMapping("/upload")
+	public String upload(UploadDTO dto) {
+		
+		String theText = dto.getTheText();
+		CommonsMultipartFile theFile = dto.getTheFile();
+              String originalFilename = theFile.getOriginalFilename();
+              File f = new File("c:\\upload", originalFilename) ;
+	      theFile.transferTo(f);
+
+
+  나. spring boot
+
+     - 2개의 의존성 설정 필요 없음.
+       이유는 spring-boot-starter-web 에 자동으로 포함되어 있음.
+
+      - jsp 
+     <form action="upload" method="post" enctype="multipart/form-data">
+        comment:<input type="text" name="theText"><br>
+          file:<input type="file" name="theFile"><br>
+
+       - DTO
+       public class UploadDTO {
+
+	String theText;
+	MultipartFile theFile;
+
+
+     - application.properties 에서 파일 업로드 관련 설정
+         # multipart (파일 업로드 관련 )
+	spring.servlet.multipart.enabled=true
+	spring.servlet.multipart.max-file-size=5MB
+	spring.servlet.multipart.max-request-size=11MB
+       
+    - Controller 
+      @PostMapping("/upload")
+	public String upload(UploadDTO dto) {
+		
+		String theText = dto.getTheText();
+		MultipartFile theFile = dto.getTheFile();
+              String originalFilename = theFile.getOriginalFilename();
+              File f = new File("c:\\upload", originalFilename) ;
+	      theFile.transferTo(f);
